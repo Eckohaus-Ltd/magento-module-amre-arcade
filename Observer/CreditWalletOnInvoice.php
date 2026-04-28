@@ -9,68 +9,58 @@ use Psr\Log\LoggerInterface;
 
 class CreditWalletOnInvoice implements ObserverInterface
 {
-    protected \;
-    protected \;
-    protected \;
+    protected $walletFactory;
+    protected $walletResource;
+    protected $logger;
 
     public function __construct(
-        WalletFactory \,
-        WalletResource \,
-        LoggerInterface \
+        WalletFactory $walletFactory,
+        WalletResource $walletResource,
+        LoggerInterface $logger
     ) {
-        \->walletFactory = \;
-        \->walletResource = \;
-        \->logger = \;
+        $this->walletFactory = $walletFactory;
+        $this->walletResource = $walletResource;
+        $this->logger = $logger;
     }
 
-    public function execute(Observer \)
+    public function execute(Observer $observer)
     {
         try {
-            // Grab the invoice and the associated order from the event
-            \ = \->getEvent()->getInvoice();
-            \ = \->getOrder();
-            \ = \->getCustomerId();
+            $invoice = $observer->getEvent()->getInvoice();
+            $order = $invoice->getOrder();
+            $customerId = $order->getCustomerId();
 
-            // If it is a guest checkout, do nothing (tokens require an account)
-            if (!\) {
+            if (!$customerId) {
                 return;
             }
 
-            \ = 0;
+            $tokensToAdd = 0;
 
-            // Loop through the items paid for on this invoice
-            foreach (\->getAllItems() as \) {
-                // If the SKU matches our Compute Token, add the quantity to the pool
-                if (\->getSku() === 'AMRE_TOKEN') {
-                    \ += (int)\->getQty();
+            foreach ($invoice->getAllItems() as $item) {
+                if ($item->getSku() === 'AMRE_TOKEN') {
+                    $tokensToAdd += (int)$item->getQty();
                 }
             }
 
-            // If they bought tokens, update the vault
-            if (\ > 0) {
-                \ = \->walletFactory->create();
+            if ($tokensToAdd > 0) {
+                $wallet = $this->walletFactory->create();
                 
-                // Load the wallet by customer_id
-                \->walletResource->load(\, \, 'customer_id');
+                $this->walletResource->load($wallet, $customerId, 'customer_id');
 
-                // If this is their first time buying, set the customer ID
-                if (!\->getId()) {
-                    \->setCustomerId(\);
-                    \->setTokenBalance(0);
+                if (!$wallet->getId()) {
+                    $wallet->setCustomerId($customerId);
+                    $wallet->setTokenBalance(0);
                 }
 
-                // Inject the new tokens
-                \ = \->getTokenBalance() + \;
-                \->setTokenBalance(\);
+                $newBalance = $wallet->getTokenBalance() + $tokensToAdd;
+                $wallet->setTokenBalance($newBalance);
                 
-                // Save back to the database
-                \->walletResource->save(\);
+                $this->walletResource->save($wallet);
                 
-                \->logger->info("AMRE Arcade: Credited {\} tokens to Customer ID {\}. New Balance: {\}");
+                $this->logger->info("AMRE Arcade: Credited {$tokensToAdd} tokens to Customer ID {$customerId}. New Balance: {$newBalance}");
             }
-        } catch (\Exception \) {
-            // Fail silently to the frontend, but log the error so it doesn't break checkout
-            \->logger->error("AMRE Arcade Wallet Error: " . \->getMessage());
+        } catch (\Exception $e) {
+            $this->logger->error("AMRE Arcade Wallet Error: " . $e->getMessage());
         }
     }
 }
