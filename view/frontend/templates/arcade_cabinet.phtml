@@ -1,0 +1,71 @@
+<div class="amre-arcade-cabinet" id="amre-arcade-cabinet">
+    <div class="cabinet-screen">
+        <div class="hub-header">
+            <div class="hub-title">AMRE // ANGULAR MOMENTUM REACTION ENGINE</div>
+        </div>
+        
+        <div id="arcade-console-output" class="console-output">
+            <span style="opacity: 0.5;">> SYSTEM ONLINE. AWAITING DATA INGESTION...</span>
+        </div>
+        
+        <form id="amre-calc-form" class="hub-controls" style="flex-direction: column; align-items: center;">
+            <input type="text" id="fortran_data" name="fortran_data" required autocomplete="off" placeholder="[ ENTER PARAMETERS... ]" class="terminal-input">
+            <button type="submit" id="amre-submit-btn" class="t-btn">INITIALIZE RUN</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('amre-calc-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Stop page from refreshing
+    
+    let outputConsole = document.getElementById('arcade-console-output');
+    let btn = document.getElementById('amre-submit-btn');
+    let inputData = document.getElementById('fortran_data').value;
+    
+    outputConsole.innerHTML += '<br><span style="color:#ffffff;">> TRANSMITTING PAYLOAD TO MOTOR...</span>';
+    btn.disabled = true;
+    btn.innerText = "PROCESSING...";
+
+    let formData = new FormData();
+    formData.append('fortran_data', inputData);
+
+    // Send the AJAX request to our Bouncer controller
+    fetch('/arcade/amre/calculate', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        btn.disabled = false;
+        btn.innerText = "INITIALIZE RUN";
+        
+        if (data.status === 'success') {
+            outputConsole.innerHTML += '<br><span style="color:#00ff00;">> [SUCCESS] ' + data.message + '</span>';
+            outputConsole.innerHTML += '<br><span style="opacity:0.6;">> CREDITS REMAINING: ' + data.remaining_tokens + '</span>';
+            // Format the Fortran JSON response
+            outputConsole.innerHTML += '<br><span style="color:#ffffff;">> OUTPUT: ' + JSON.stringify(data.output) + '</span>'; 
+        } else {
+            // Display errors (Not logged in, insufficient funds, etc.)
+            outputConsole.innerHTML += '<br><span style="color:red;">> [ERROR] ' + data.message + '</span>';
+        }
+        
+        // Auto-scroll to the bottom of the console
+        outputConsole.scrollTop = outputConsole.scrollHeight;
+    })
+    .catch(error => {
+        btn.disabled = false;
+        btn.innerText = "INITIALIZE RUN";
+        outputConsole.innerHTML += '<br><span style="color:red;">> [CRITICAL FAILURE] INTERNAL LINK SEVERED.</span>';
+    });
+});
+</script>
+
+<style>
+/* Arcade specific styling matching the Eckohaus OS Terminal vibe */
+.amre-arcade-cabinet { max-width: 600px; margin: 40px auto; font-family: 'Courier New', monospace; color: #ffffff; border: 1px solid rgba(255,255,255,0.2); padding: 30px; background: rgba(255,255,255,0.02); }
+.console-output { min-height: 200px; max-height: 400px; background: rgba(0,0,0,0.2); padding: 20px; border: 1px inset rgba(255,255,255,0.1); margin-bottom: 30px; font-size: 11px; line-height: 1.8; overflow-y: auto; letter-spacing: 1px; }
+.terminal-input { width: 100%; max-width: 400px; background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.5); color: #ffffff; font-family: 'Courier New', monospace; font-size: 12px; margin: 10px 0 30px; padding: 10px; outline: none; text-align: center; letter-spacing: 2px; }
+.terminal-input::placeholder { color: rgba(255,255,255,0.3); }
+.terminal-input:focus { border-bottom-color: #00ff00; color: #00ff00; }
+</style>
