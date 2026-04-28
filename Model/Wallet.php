@@ -7,6 +7,6 @@ class Wallet extends AbstractModel
 {
     protected function _construct()
     {
-        \->_init(\Eckohaus\AmreArcade\Model\ResourceModel\Wallet::class);
+        $this->_init(\Eckohaus\AmreArcade\Model\ResourceModel\Wallet::class);
     }
 }
