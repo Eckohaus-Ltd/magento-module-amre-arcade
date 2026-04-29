@@ -70,7 +70,7 @@ class Calculate extends Action implements CsrfAwareActionInterface
 
         // 5. Contact the Fortran Engine (Internal Server Request via GET)
         // Target the absolute binary path directly and append the query string
-        $fortranEndpoint = 'http://127.0.0.1:8080/api/base_equation.bin?' . $queryString; 
+        $fortranEndpoint = 'https://api.eckohaus.co.uk/api/electrical/base_equation?' . $queryString; 
 
         $ch = curl_init($fortranEndpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
