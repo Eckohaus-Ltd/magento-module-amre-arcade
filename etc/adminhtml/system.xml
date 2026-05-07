@@ -13,12 +13,22 @@
             
             <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Connection Settings</label>
-                
                 <field id="fortran_endpoint" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Fortran API Endpoint</label>
-                    <comment><![CDATA[Internal server route to the Nginx block. Default: http://127.0.0.1:8080/calculate]]></comment>
+                    <comment><![CDATA[Internal server route to the Nginx block.]]></comment>
                 </field>
-                
+            </group>
+
+            <group id="stripe" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Stripe Gateway (Sandbox)</label>
+                <field id="secret_key" translate="label" type="obscure" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Test Secret Key</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="webhook_secret" translate="label" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Webhook Signing Secret</label>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
             </group>
         </section>
     </system>
