@@ -1,0 +1,13 @@
+<div class="amre-credit-terminal">
+    <div class="credit-readout">
+        <span class="label">AMRE Calculation Credits</span>
+        <span class="balance" id="amre-live-balance"><?php echo $block->escapeHtml($block->getTokenBalance()); ?></span>
+    </div>
+    <div class="actions-toolbar">
+        <div class="primary">
+            <button type="button" class="action top-up primary" title="Top Up Credits" onclick="window.location.href='/amre-arcade-top-up'">
+                <span>Top Up Credits</span>
+            </button>
+        </div>
+    </div>
+</div>
