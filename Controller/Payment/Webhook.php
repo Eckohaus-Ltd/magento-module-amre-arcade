@@ -9,6 +9,7 @@ use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\RequestInterface;
 use Eckohaus\AmreArcade\Model\WalletFactory;
 use Eckohaus\AmreArcade\Model\ResourceModel\Wallet as WalletResource;
+use Magento\Framework\Encryption\EncryptorInterface;
 use Psr\Log\LoggerInterface;
 
 class Webhook extends Action implements CsrfAwareActionInterface
@@ -16,6 +17,7 @@ class Webhook extends Action implements CsrfAwareActionInterface
     protected $scopeConfig;
     protected $walletFactory;
     protected $walletResource;
+    protected $encryptor;
     protected $logger;
 
     public function __construct(
@@ -23,16 +25,17 @@ class Webhook extends Action implements CsrfAwareActionInterface
         ScopeConfigInterface $scopeConfig,
         WalletFactory $walletFactory,
         WalletResource $walletResource,
+        EncryptorInterface $encryptor,
         LoggerInterface $logger
     ) {
         $this->scopeConfig = $scopeConfig;
         $this->walletFactory = $walletFactory;
         $this->walletResource = $walletResource;
+        $this->encryptor = $encryptor;
         $this->logger = $logger;
         parent::__construct($context);
     }
 
-    // Bypass standard Magento CSRF since Stripe is an external system sending the POST
     public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException { return null; }
     public function validateForCsrf(RequestInterface $request): ?bool { return true; }
 
@@ -40,9 +43,11 @@ class Webhook extends Action implements CsrfAwareActionInterface
     {
         $payload = file_get_contents('php://input');
         $sigHeader = $this->getRequest()->getHeader('Stripe-Signature');
-        $endpointSecret = $this->scopeConfig->getValue('amre_arcade/stripe/webhook_secret');
+        
+        // Retrieve AND Decrypt the Webhook Secret
+        $encryptedSecret = $this->scopeConfig->getValue('amre_arcade/stripe/webhook_secret');
+        $endpointSecret = $this->encryptor->decrypt($encryptedSecret);
 
-        // 1. Verify the Cryptographic Signature natively
         $signatureParts = explode(',', $sigHeader);
         $timestamp = '';
         $v1 = '';
@@ -60,17 +65,13 @@ class Webhook extends Action implements CsrfAwareActionInterface
             return $this->getResponse()->setStatusCode(400);
         }
 
-        // 2. Process the Validated Event
         $event = json_decode($payload, true);
 
         if ($event['type'] == 'checkout.session.completed') {
             $session = $event['data']['object'];
-            
-            // Extract the Magento Customer ID we attached during checkout
             $customerId = $session['client_reference_id'];
 
             if ($customerId) {
-                // Add 1 Token to the User's Wallet
                 $wallet = $this->walletFactory->create();
                 $this->walletResource->load($wallet, $customerId, 'customer_id');
 
@@ -87,7 +88,6 @@ class Webhook extends Action implements CsrfAwareActionInterface
             }
         }
 
-        // Always return a 200 OK so Stripe knows we received it
         return $this->getResponse()->setStatusCode(200);
     }
 }
