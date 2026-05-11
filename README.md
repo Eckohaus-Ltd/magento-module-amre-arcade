@@ -1,6 +1,8 @@
-# AMRE Arcade Terminal (Magento 2 Module)
+# AMRE Arcade Terminal (Magento 2 Module) - Eckohaus Ltd
 
 **Description:** A relational interface layer for the Angular Momentum Reaction Engine (AMRE). This module facilitates 64-bit double-precision physics calculations by bridging the Magento 2 storefront with a self-hosted Fortran calculation motor.
+
+**Regional Integration Segment:** This repository is specifically configured for **Eckohaus Ltd**, utilizing **Stripe** as the primary payment processor for AMRE Token transactions.
 
 **URL:** [https://kupu-home.com/terminal/amre-arcade-terminal](https://kupu-home.com/terminal/amre-arcade-terminal)
 
